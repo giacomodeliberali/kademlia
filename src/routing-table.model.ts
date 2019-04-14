@@ -13,73 +13,57 @@ export class RoutingTable {
 
     constructor(
         private m: number,
-        private k: number) {
+        private k: number,
+        private node: Node) {
 
         // initialize buckets
         for (let i = 0; i < this.m; i++)
             this.buckets.push(new Bucket(this.k));
     }
 
-    public getKClosestTo(source: Node, target: Identifier): Array<Node> {
+    public getKClosestTo(target: Identifier): Array<Node> {
 
-        let kClosestNodes: Array<Node> = [];
+        // k-closest = k-closest U closest contacts from other buckets
 
-        const closestBucket = this.getClosestBucket(source, target);
+        // take closes bucket
+        const closestBucket = this.getClosestBucket(target);
+        const bucketIndex = this.buckets.findIndex(b => b === closestBucket);
 
-        const bucketLength = closestBucket.length();
+        // get all its nodes
+        const kClosestNodes: Array<Node> = closestBucket.getNodes();
 
-        if (bucketLength < this.k) {
-            // k-closest = k-closest U closest contacts from other buckets
-            kClosestNodes = closestBucket.getNodes();
-
-            const bucketIndex = this.buckets.findIndex(b => b === closestBucket);
-
-            // aggregation logic
-
-            let i = 1;
-            //while (kClosestNodes.length < this.k) {
-
-
-            if (bucketIndex > 0) {
-                // push all nodes in prev bucket
-                const prevBucket = this.buckets[bucketIndex - i];
-                kClosestNodes.push(...prevBucket.getNodes());
-            }
-
-            if (bucketIndex < this.buckets.length - 1) {
-                // push all nodes in next bucket
-                const nextBucket = this.buckets[bucketIndex + i];
-                kClosestNodes.push(...nextBucket.getNodes());
-            }
-            i++;
-            //}
-
-        } else {
-            kClosestNodes = closestBucket.getNodes();
+        // aggregation logic
+        let i = -1;
+        let nextBucketIndex = Math.abs((bucketIndex + i)) % this.buckets.length;
+        while (kClosestNodes.length < this.k && nextBucketIndex != bucketIndex) {
+            // zig zag with pattern: 0, -1, +1, -2, +2 
+            // until I find k nodes or i return to original bucket  
+            const nextBucket = this.buckets[nextBucketIndex];
+            kClosestNodes.push(...nextBucket.getNodes());
+            i *= -1;
+            if (i < 0)
+                i--;
+            nextBucketIndex = Math.abs((bucketIndex + i)) % this.buckets.length;
         }
-
-        kClosestNodes.sort((a, b) => {
-            return b.identifier.getDistanceTo(source.identifier) - a.identifier.getDistanceTo(source.identifier);;
-        });
-
-        if (kClosestNodes.length > this.k)
-            return kClosestNodes.slice(0, this.k);
 
         return kClosestNodes;
     }
 
-    public insert(source: Node, target: Node) {
+    public insert(target: Node) {
 
-        if (source.equals(target))
+        if (this.node.equals(target))
             return;
 
-        const bucket = this.getClosestBucket(source, target.identifier);
+        const bucket = this.getClosestBucket(target.identifier);
         bucket.insert(target);
     }
 
-    private getClosestBucket(source: Node, target: Identifier): Bucket {
+    private getClosestBucket(target: Identifier): Bucket {
 
-        const distance = source.identifier.getDistanceTo(target);
+        const distance = this.node.identifier.getDistanceTo(target);
+
+        if (distance == 0)
+            return this.buckets[0];
 
         let bucket: Bucket = null;
         for (let i = 0; i < this.buckets.length; i++) {

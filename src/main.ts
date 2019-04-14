@@ -1,9 +1,13 @@
 import { Coordinator } from "./coordinator.model";
+import { Constants } from "./constants";
 
 (() => {
-    const m = 25;
-    const n = 10000;
-    const k = 20;
-    const coordinator = new Coordinator(m, n, k);
+    const m = 8;
+    const n = 10;
+    const k = 1;
+
+    const constants = new Constants(k, m, n);
+
+    const coordinator = new Coordinator(constants);
     coordinator.bootstrapNetwork();
 })();
