@@ -28,7 +28,15 @@ export class IdentifierGenerator {
         return nodeId;
     }
 
-    private getRandomInRange(min: number, max: number) {
-        return Math.floor(Math.random() * Math.floor(max)) + min;
+    public getRandomInRange(min: number, max: number) {
+        return Math.floor(Math.random() * (max - min) + min);
+    }
+
+    public getUniqueRandomInRange(min: number, max: number) {
+        let random: number;
+        do {
+            random = this.getRandomInRange(min, max);
+        } while (!!this.extractedIds.find(id => id == random));
+        return random;
     }
 }

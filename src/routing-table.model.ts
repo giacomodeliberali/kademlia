@@ -37,7 +37,7 @@ export class RoutingTable {
         let nextBucketIndex = Math.abs((bucketIndex + i)) % this.buckets.length;
         while (kClosestNodes.length < this.k && nextBucketIndex != bucketIndex) {
             // zig zag with pattern: 0, -1, +1, -2, +2 
-            // until I find k nodes or i return to original bucket  
+            // until I find k nodes or I return to original bucket
             const nextBucket = this.buckets[nextBucketIndex];
             kClosestNodes.push(...nextBucket.getNodes());
             i *= -1;
@@ -73,7 +73,14 @@ export class RoutingTable {
             }
         }
 
+        if (!bucket)
+            debugger;
+
         return bucket;
+    }
+
+    public getBuckets() {
+        return this.buckets;
     }
 
 }

@@ -6,7 +6,7 @@ export class Coordinator {
 
     private nodes: Array<Node>;
 
-    constructor(private params: Constants) {
+    constructor(private constants: Constants) {
 
         this.nodes = [];
     }
@@ -17,33 +17,69 @@ export class Coordinator {
 
     public bootstrapNetwork() {
         // insert first bootstrap node with empty routing table
-        const bootNodeId = IdentifierGenerator.instance.generateIdentifier(this.params.m);
-        const bootNode = new Node(bootNodeId, this.params.k, this.params.m);
+        const bootNode = new Node(this.constants);
         this.nodes.push(bootNode);
 
-        for (let i = 1; i < this.params.n; i++) {
+        for (let i = 1; i < this.constants.n; i++) {
             this.joinNewNode();
         }
         console.log("Nodes => " + this.nodes.length);
+
+        return this.nodes;
     }
 
     private joinNewNode() {
 
         // generate a new node
-        const newNodeId = IdentifierGenerator.instance.generateIdentifier(this.params.m);
-        const newNode = new Node(newNodeId, this.params.k, this.params.m);
+        const newNodeToJoin = new Node(this.constants);
 
         // choose bootstrap node of newNode
         const bootstrapNode = this.getNodeById(IdentifierGenerator.instance.getRandomExistingId());
 
         // insert bootstrap into new node's routing table
-        newNode.updateRoutingTable(bootstrapNode);
+        newNodeToJoin.updateRoutingTable(bootstrapNode);
 
-        bootstrapNode.lookup(newNode);
+        // bootstrapNode.lookup(newNode);
 
-        this.nodes.push(newNode);
+        for (let i = 0; i < this.constants.m; i++) {
+            // generate a random id (never extracted) for each bucket range
+            const nodeId = IdentifierGenerator.instance.getUniqueRandomInRange(Math.pow(2, i), Math.pow(2, i + 1) - 1);
+            const randomNodeInBucket = new Node(this.constants, nodeId);
 
+            // and make a lookup of the new node
+            newNodeToJoin.lookup(randomNodeInBucket);
+        }
 
+        this.nodes.push(newNodeToJoin);
+
+    }
+
+    public generateGraphJson() {
+
+        const json: any = {
+            elements: {
+                nodes: [],
+                edges: []
+            }
+        };
+        this.nodes.forEach(n => {
+            json.elements.nodes.push({
+                data: {
+                    id: n.identifier.id.toString()
+                }
+            });
+            n.getRoutingTable().getBuckets().forEach(bucket => {
+                bucket.getNodes().forEach(link => {
+                    json.elements.edges.push({
+                        data: {
+                            source: n.identifier.id.toString(),
+                            target: link.identifier.id.toString()
+                        }
+                    });
+                });
+            });
+        });
+        return JSON.stringify(json);
     }
 
 }
