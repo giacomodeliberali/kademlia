@@ -24,12 +24,11 @@ export class Node {
      * 
      * @param target The target node
      */
-    public findNode(target: Node): Array<Node> {
-        this.routingTable.insert(target);
-        return this.routingTable.getKClosestTo(target.identifier);
+    public findNode(target: Identifier): Array<Node> {
+        return this.routingTable.getKClosestTo(target);
     }
 
-    private sliceCloserTo(source: Array<Node>, target: Node, limit: number) {
+    private sliceCloserTo(source: Array<Node>, target: Identifier, limit: number) {
 
         source.sort((a, b) => b.getDistanceTo(target) - a.getDistanceTo(target)); // sort DESC
 
@@ -44,7 +43,7 @@ export class Node {
      * 
      * @param target The target node
      */
-    public lookup(target: Node): Array<Node> {
+    public lookup(target: Identifier): Array<Node> {
 
         /*
                 IDEA:
@@ -121,8 +120,9 @@ export class Node {
         return this.identifier.equals(node.identifier);
     }
 
-    getDistanceTo(node: Node) {
-        return this.identifier.getDistanceTo(node.identifier);
+
+    getDistanceTo(target: Identifier) {
+        return this.identifier.getDistanceTo(target);
     }
 
     getRoutingTable() {
