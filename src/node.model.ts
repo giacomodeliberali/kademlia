@@ -29,6 +29,16 @@ export class Node {
         return this.routingTable.getKClosestTo(target.identifier);
     }
 
+    private sliceCloserTo(source: Array<Node>, target: Node, limit: number) {
+
+        source.sort((a, b) => b.getDistanceTo(target) - a.getDistanceTo(target)); // sort DESC
+
+        if (source.length > limit)
+            return source.slice(0, limit);
+
+        return source;
+    }
+
     /**
      * Return the k absolute closest nodes to the target
      * 
@@ -57,19 +67,13 @@ export class Node {
                 return i primi k di kAbsoluteClosest
         */
 
-        const kAbsoluteClosest: Array<Node> = [];
+        let kAbsoluteClosest: Array<Node> = [];
 
         // get alpha nodes that for this node are closer to the target
-        let myClosestNodes = this.findNode(target);
-        if (myClosestNodes.length > this.constants.alpha)
-            myClosestNodes = myClosestNodes.slice(0, this.constants.alpha);
+        let myClosestNodes = this.sliceCloserTo(this.findNode(target), target, this.constants.alpha);
 
         // indicate if there exist node closer
         let hasCloserNodes = true;
-
-        // save the nodes returned by previous findNode() calls
-        // to detect when there is no node closer to target
-        let prevNodes: Array<Node> = [];
 
         // the nodes returned by the current cycle findNode()
         let currentNodes: Array<Node> = myClosestNodes;
@@ -83,26 +87,21 @@ export class Node {
                 nextClosest.push(...node.findNode(target));
             });
 
-            const prevFarthest = Math.min(...prevNodes.map(q => q.getDistanceTo(target))) || 0;
+            const farthestDistance = kAbsoluteClosest.length > 0 ? Math.min(...kAbsoluteClosest.map(q => q.getDistanceTo(target))) : 0;
 
-            if (!nextClosest.some(n => n.getDistanceTo(target) > prevFarthest)) {
-                // non esiste un nodo più vicino di quello più lontano ritornato dal ciclo precedente,
-                // interrompi il while
-                hasCloserNodes = false;
+            if (nextClosest.some(n => n.getDistanceTo(target) > farthestDistance)) {
+                // returned nodes are more closer, merge them with actual results and pick k best
+                kAbsoluteClosest = this.sliceCloserTo([...kAbsoluteClosest, ...nextClosest], target, this.constants.k);
+
+                // make a step closer, choose alpha closest nodes in which perform a findNode()
+                currentNodes = this.sliceCloserTo(kAbsoluteClosest, target, this.constants.alpha);
+
             } else {
-                // returned nodes are more closer, add them
-                kAbsoluteClosest.push(...nextClosest);
+                // the nodes returned by the alpha nodes are no closer than actual ones, stop lookup
+                hasCloserNodes = false;
             }
 
-            prevNodes = currentNodes;
-
         } while (hasCloserNodes);
-
-
-        kAbsoluteClosest.sort((a, b) => b.getDistanceTo(target) - a.getDistanceTo(target));
-
-        if (kAbsoluteClosest.length > this.constants.k)
-            return kAbsoluteClosest.slice(0, this.constants.k);
 
         return kAbsoluteClosest;
     }

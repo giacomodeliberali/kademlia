@@ -39,15 +39,22 @@ export class Coordinator {
         // insert bootstrap into new node's routing table
         newNodeToJoin.updateRoutingTable(bootstrapNode);
 
-        // bootstrapNode.lookup(newNode);
+        // bootstrapNode.lookup(newNode); // => it is done implicitly at the first lookup() since it's the only node in the routing table 
 
         for (let i = 0; i < this.constants.m; i++) {
             // generate a random id (never extracted) for each bucket range
+            /*
+                TODO: the generated id in the bucket must take into account the distance from the newNodeToJoin.
+                Now it is not considering the XOR distance but only the identifier int number.
+                Basically the identifier (it will be a hash) must by constructed by hand taking the hash of the identifier in a bucket and
+                modifying it as a string, so char per char (or bit per bit)
+            */
             const nodeId = IdentifierGenerator.instance.getUniqueRandomInRange(Math.pow(2, i), Math.pow(2, i + 1) - 1);
             const randomNodeInBucket = new Node(this.constants, nodeId);
 
             // and make a lookup of the new node
             newNodeToJoin.lookup(randomNodeInBucket);
+            //this.nodes.push(randomNodeInBucket); // TODO: check this push
         }
 
         this.nodes.push(newNodeToJoin);
@@ -62,6 +69,7 @@ export class Coordinator {
                 edges: []
             }
         };
+        // TODO: be sure that all nodes are present in the nodes list
         this.nodes.forEach(n => {
             json.elements.nodes.push({
                 data: {
