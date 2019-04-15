@@ -32,7 +32,7 @@ export class Coordinator {
         for (let i = 1; i < this.constants.n; i++) {
             this.joinNewNode();
             //console.log(`Joined node ${i+1} of ${this.constants.n}`);
-            process.stdout.write(`Joining nodes... (${Math.ceil((i+1)/this.constants.n * 100)}%) \r`);
+            process.stdout.write(`Joining nodes... (${Math.ceil((i + 1) / this.constants.n * 100)}%) \r`);
         }
         console.log(`Network bootstrap complete.`);
 
@@ -50,17 +50,19 @@ export class Coordinator {
         // insert bootstrap into new node's routing table
         newNodeToJoin.updateRoutingTable(bootstrapNode);
 
-        // bootstrapNode.lookup(newNode); // => it is done implicitly at the first lookup() since it's the only node in the routing table 
+        // perform a self-lookup
+        newNodeToJoin.updateRoutingTable(
+            newNodeToJoin.lookup(newNodeToJoin.identifier)
+        );
 
+        // refreshes all k-buckets 
         for (let i = 0; i < this.constants.m; i++) {
             // generate a random id (never extracted) for each bucket range
             const randomNodeIdentifierInBucket = new Identifier(
                 IdentifierGenerator.instance.getUniqueRandomInRange(Math.pow(2, i), Math.pow(2, i + 1) - 1)
             );
-            // and make a lookup of the new node, updating the routing table with results
-            newNodeToJoin.updateRoutingTable( // TODO: fix this update that is wrong and produces a clustering coefficient of 1 for a lot of nodes (the starting ones)
-                newNodeToJoin.lookup(randomNodeIdentifierInBucket)
-            );
+            // and make a lookup of the new node
+            newNodeToJoin.lookup(randomNodeIdentifierInBucket)
         }
 
         this.nodes.push(newNodeToJoin);
