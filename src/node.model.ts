@@ -2,7 +2,7 @@ import { Identifier } from "./identifier.model";
 import { RoutingTable } from "./routing-table.model";
 import { Constants } from "./constants";
 import { IdentifierGenerator } from "./identifier-generator.service";
-
+import { NodeArrayHelper } from "../array-helper.helper";
 export class Node {
 
     private routingTable: RoutingTable;
@@ -24,19 +24,12 @@ export class Node {
      * 
      * @param target The target node
      */
+    //FIXME: add traveled node (and add this)
     public findNode(target: Identifier): Array<Node> {
         return this.routingTable.getKClosestTo(target);
     }
 
-    private sliceCloserTo(source: Array<Node>, target: Identifier, limit: number) {
 
-        source.sort((a, b) => b.getDistanceTo(target) - a.getDistanceTo(target)); // sort DESC
-
-        if (source.length > limit)
-            return source.slice(0, limit);
-
-        return source;
-    }
 
     /**
      * Return the k absolute closest nodes to the target
@@ -45,55 +38,68 @@ export class Node {
      */
     public lookup(target: Identifier): Array<Node> {
 
-        /*
-                IDEA:
-                
-                kAbsoluteClosest = [];
-                myClosestNodes = this.findNode(target)
-                alphaNodes = choose alpha closer node from myClosestNodes 
-
-                do{
-                    foreach node in alphaNodes {
-                        kNextCloser = dammi i k più vicini secondo il prossimo nodo
-                        kAbsoluteClosest.addAll(kNextCloser)
-                    }
-                } while(esistono nodi piu vicini) 
-                
-                break while when --> quando i kNextCloser non contengono nodi più vicini rispetto alla chiamata precedente
-
-                kAbsoluteClosest.sortByDistance
-
-                return i primi k di kAbsoluteClosest
-        */
-
+        // contains the k absolute closest nodes to the target (returned value)
         let kAbsoluteClosest: Array<Node> = [];
 
         // get alpha nodes that for this node are closer to the target
-        let myClosestNodes = this.sliceCloserTo(this.findNode(target), target, this.constants.alpha);
+        let myClosestNodes = NodeArrayHelper
+            .from(this.findNode(target))
+            .selectDistinct()
+            .sortByXorDistanceTo(target)
+            .limit(this.constants.alpha)
+            .get();
 
-        // indicate if there exist node closer
-        let hasCloserNodes = true;
+        // the closest known node
+        let closestNode: Node = myClosestNodes[0]; // there is always at least the head of this array (the bootstrap node)
 
         // the nodes returned by the current cycle findNode()
-        let currentNodes: Array<Node> = myClosestNodes;
+        let maybeQueriedNodes: Array<Node> = myClosestNodes;
+
+        // contains the identifiers already queried
+        const queriedIdentifiers: Map<number, boolean> = new Map();
+
+        // indicates if there are more closer node and the findNode() should advance
+        let hasCloserNodes: boolean = true;
 
         do {
 
-            const nextClosest: Array<Node> = [];
+            const currentNodes: Array<Node> = [];
 
-            currentNodes.forEach(node => {
-                // add all nodes
-                nextClosest.push(...node.findNode(target));
+            maybeQueriedNodes.forEach(node => {
+                // add all nodes if they are not already queried
+                if (!queriedIdentifiers.has(node.identifier.id)) {
+                    // this not hasn't been queried yet
+                    currentNodes.push(
+                        // add all k nodes returned from this node
+                        ...node.findNode(target)
+                    );
+                    // mark it as queried
+                    queriedIdentifiers.set(node.identifier.id, true);
+                }
             });
 
-            const farthestDistance = kAbsoluteClosest.length > 0 ? Math.min(...kAbsoluteClosest.map(q => q.getDistanceTo(target))) : 0;
+            // compute closest node of this run
+            const newClosest = currentNodes.find(n => n.getDistanceTo(target) < closestNode.getDistanceTo(target));
 
-            if (nextClosest.some(n => n.getDistanceTo(target) > farthestDistance)) {
+            if (newClosest) {
+                // a new closest node has been found
+                closestNode = newClosest;
+
                 // returned nodes are more closer, merge them with actual results and pick k best
-                kAbsoluteClosest = this.sliceCloserTo([...kAbsoluteClosest, ...nextClosest], target, this.constants.k);
+                kAbsoluteClosest = NodeArrayHelper
+                    .fromMerge(kAbsoluteClosest, currentNodes)
+                    .selectDistinct()
+                    .sortByXorDistanceTo(target)
+                    .limit(this.constants.k)
+                    .get()
 
                 // make a step closer, choose alpha closest nodes in which perform a findNode()
-                currentNodes = this.sliceCloserTo(kAbsoluteClosest, target, this.constants.alpha);
+                maybeQueriedNodes = NodeArrayHelper
+                    .from(kAbsoluteClosest)
+                    .selectDistinct()
+                    .sortByXorDistanceTo(target)
+                    .limit(this.constants.k)
+                    .get()
 
             } else {
                 // the nodes returned by the alpha nodes are no closer than actual ones, stop lookup
@@ -101,6 +107,12 @@ export class Node {
             }
 
         } while (hasCloserNodes);
+
+        // call a findNode() to all k closest nodes not already queried
+        kAbsoluteClosest.forEach(node => {
+            if (!queriedIdentifiers.has(node.identifier.id))
+                node.findNode(target);
+        });
 
         return kAbsoluteClosest;
     }
