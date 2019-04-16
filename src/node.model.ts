@@ -3,6 +3,7 @@ import { RoutingTable } from "./routing-table.model";
 import { Constants } from "./constants";
 import { IdentifierGenerator } from "./identifier-generator.service";
 import { NodeArrayHelper } from "../array-helper.helper";
+
 export class Node {
 
     private routingTable: RoutingTable;
@@ -24,9 +25,21 @@ export class Node {
      * 
      * @param target The target node
      */
-    //FIXME: add traveled node (and add this)
     public findNode(target: Identifier): Array<Node> {
         return this.routingTable.getKClosestTo(target);
+    }
+
+    //FIXME: add traveled node (and add this)
+    public findNodeWithTraveledNodes(request: FindNodeRequest): FindNodeResponse {
+
+        // update my routing table with the traversed nodes
+        this.updateRoutingTable(request.traveledNodes);
+
+        // return the k-closest nodes and insert myself in traversed nodes' list
+        return new FindNodeResponse(
+            this.routingTable.getKClosestTo(request.target),
+            [...request.traveledNodes, this]
+        );
     }
 
 
@@ -58,17 +71,20 @@ export class Node {
         // contains the identifiers already queried
         const queriedIdentifiers: Map<number, boolean> = new Map();
 
-        // indicates if there are more closer node and the findNode() should advance
+        // indicates if there are more closer nodes, so if the findNode() should advance
         let hasCloserNodes: boolean = true;
 
         do {
-
+            // contains at most the k*alpha nodes returned by the alpha nodes in the maybeQueriedNodes array
             const currentNodes: Array<Node> = [];
+
+            // the following cycle will always be performed in an array
+            // of at max this.constants.alpha times, by design
 
             maybeQueriedNodes.forEach(node => {
                 // add all nodes if they are not already queried
                 if (!queriedIdentifiers.has(node.identifier.id)) {
-                    // this not hasn't been queried yet
+                    // this node hasn't been queried yet
                     currentNodes.push(
                         // add all k nodes returned from this node
                         ...node.findNode(target)
@@ -79,11 +95,11 @@ export class Node {
             });
 
             // compute closest node of this run
-            const newClosest = currentNodes.find(n => n.getDistanceTo(target) < closestNode.getDistanceTo(target));
+            const runClosestNode = currentNodes.find(n => n.getDistanceTo(target) < closestNode.getDistanceTo(target));
 
-            if (newClosest) {
+            if (runClosestNode) {
                 // a new closest node has been found
-                closestNode = newClosest;
+                closestNode = runClosestNode;
 
                 // returned nodes are more closer, merge them with actual results and pick k best
                 kAbsoluteClosest = NodeArrayHelper
@@ -139,6 +155,28 @@ export class Node {
 
     getRoutingTable() {
         return this.routingTable;
+    }
+
+}
+
+//FIXME: move in separate file once finished
+
+class FindNodeResponse {
+
+    constructor(
+        public readonly closestNodes: Array<Node>,
+        public readonly traveledNodes: Array<Node>) {
+
+    }
+
+}
+
+class FindNodeRequest {
+
+    constructor(
+        public readonly target: Identifier,
+        public readonly traveledNodes: Array<Node>) {
+
     }
 
 }
