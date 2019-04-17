@@ -9,7 +9,7 @@
     "test:cov": "jest --coverage",
     "test:coveralls": "jest --coverage --coverageReporters=text-lcov | coveralls",
     "dev": "nodemon",
-    "start": "npm run build && node dist/main.js",
+    "start": "npm run build && node dist/main.js --stack-size=32000 --max-old-space-size=8192",
     "build": "tsc",
     "clean": "npx rimraf dist && npx rimraf coverage",
     "docs": "npx typedoc"

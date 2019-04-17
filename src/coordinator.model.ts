@@ -18,10 +18,10 @@ export class Coordinator {
 
     public bootstrapNetwork() {
 
-        console.log(`Bootstrapping network of ${this.constants.n} nodes.`);
+        console.log(`Bootstrapping network of ${this.constants.n} nodes [${new Date()}].`);
         console.log(`\t - k = ${this.constants.k}`);
         console.log(`\t - m = ${this.constants.m}`);
-        console.log(`\t - alpha = ${this.constants.alpha}\n`);
+        console.log(`\t - alpha = ${this.constants.alpha}`);
 
         // insert first bootstrap node with empty routing table
         const bootNode = new Node(this.constants);
@@ -29,12 +29,25 @@ export class Coordinator {
 
         console.log(`Bootstrap node is ${bootNode.identifier.id}.`);
 
+        let date = new Date();
         for (let i = 1; i < this.constants.n; i++) {
             this.joinNewNode();
             //console.log(`Joined node ${i+1} of ${this.constants.n}`);
-            process.stdout.write(`Joining nodes... (${Math.ceil((i + 1) / this.constants.n * 100)}%) \r`);
+            //process.stdout.write(`Joining nodes... (${Math.ceil((i + 1) / this.constants.n * 100)}%) \r`);
+            process.stdout.write(`Joining nodes... (${i}/${this.constants.n}) \r`);
         }
-        console.log(`Network bootstrap complete.`);
+
+        let edgeCount = 0;
+        this.nodes.forEach(n => {
+            n.getRoutingTable().getBuckets().forEach(bucket => {
+                bucket.getNodes().forEach(link => {
+                    edgeCount++;
+                });
+            });
+        });
+
+
+        console.log(`Network bootstrap complete (${edgeCount} edges) [${Math.abs((new Date().getTime() - date.getTime()) / 1000)}sec].\n`);
 
         return this.nodes;
     }
@@ -62,7 +75,10 @@ export class Coordinator {
                 IdentifierGenerator.instance.getUniqueRandomInRange(Math.pow(2, i), Math.pow(2, i + 1) - 1)
             );
             // and make a lookup of the new node
-            newNodeToJoin.lookup(randomNodeIdentifierInBucket)
+            newNodeToJoin.updateRoutingTable(
+                //CHECK: this updateRoutingTable is correct?
+                newNodeToJoin.lookup(randomNodeIdentifierInBucket)
+            );
         }
 
         this.nodes.push(newNodeToJoin);
@@ -93,6 +109,18 @@ export class Coordinator {
             });
         });
         return JSON.stringify(json);
+    }
+
+    public generateGraphCsv() {
+        let csv = "Source;Target";
+        this.nodes.forEach(n => {
+            n.getRoutingTable().getBuckets().forEach(bucket => {
+                bucket.getNodes().forEach(link => {
+                    csv += `${n.identifier.id.toString()};${link.identifier.id.toString()}\n`;
+                });
+            });
+        });
+        return csv;
     }
 
 }

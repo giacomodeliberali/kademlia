@@ -3,9 +3,9 @@ import { Constants } from "./constants";
 import * as fs from "fs";
 
 (() => {
-    const m = 27;
+    const m = 25;
     const n = 1000;
-    const k = 22;
+    const k = 5;
     const alpha = 3;
 
     const constants = new Constants(k, m, n, alpha);
@@ -13,5 +13,7 @@ import * as fs from "fs";
     const coordinator = new Coordinator(constants);
     coordinator.bootstrapNetwork();
 
-    fs.writeFileSync("./graph.json", coordinator.generateGraphJson());
+    fs.writeFileSync(`./graphs/graph_n${constants.n}_m${constants.m}_k${constants.k}_alpha${constants.alpha}.json`, coordinator.generateGraphJson());
+    fs.writeFileSync(`./graphs/graph_n${constants.n}_m${constants.m}_k${constants.k}_alpha${constants.alpha}.csv`, coordinator.generateGraphCsv());
 })();
+

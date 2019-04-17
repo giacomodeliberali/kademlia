@@ -65,18 +65,12 @@ export class RoutingTable {
         if (distance == 0)
             return this.buckets[0];
 
-        let bucket: Bucket = null;
         for (let i = 0; i < this.buckets.length; i++) {
-            if (distance >= Math.pow(2, i) && distance < (Math.pow(2, i + 1))) {
-                bucket = this.buckets[i];
-                break; // TODO: refactor this shit
-            }
+            if (distance >= Math.pow(2, i) && distance < (Math.pow(2, i + 1)))
+                return this.buckets[i];
         }
 
-        if (!bucket)
-            debugger;
-
-        return bucket;
+        throw new Error("The given identifier does not match the 2^m limit");
     }
 
     public getBuckets() {

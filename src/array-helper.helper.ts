@@ -1,5 +1,5 @@
-import { Node } from "./src/node.model";
-import { Identifier } from "./src/identifier.model";
+import { Node } from "./node.model";
+import { Identifier } from "./identifier.model";
 
 export class NodeArrayHelper {
     public static from(source: Array<Node>) {
@@ -36,6 +36,15 @@ class ConfigurableArray {
             })
             .filter(node => !!node) // remove non valid nodes
 
+        return this;
+    }
+
+    public removeAnyInside(alreadyQueried: Iterable<number>) {
+        for (let id of alreadyQueried) {
+            const index = this.array.findIndex(node => node.identifier.id == id);
+            if (index >= 0)
+                this.array.splice(index, 1);
+        }
         return this;
     }
 

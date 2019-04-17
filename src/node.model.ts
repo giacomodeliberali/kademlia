@@ -2,7 +2,7 @@ import { Identifier } from "./identifier.model";
 import { RoutingTable } from "./routing-table.model";
 import { Constants } from "./constants";
 import { IdentifierGenerator } from "./identifier-generator.service";
-import { NodeArrayHelper } from "../array-helper.helper";
+import { NodeArrayHelper } from "./array-helper.helper";
 
 export class Node {
 
@@ -25,12 +25,12 @@ export class Node {
      * 
      * @param target The target node
      */
-    public findNode(target: Identifier): Array<Node> {
-        return this.routingTable.getKClosestTo(target);
-    }
+    /*     public findNode(target: Identifier): Array<Node> {
+            return this.routingTable.getKClosestTo(target);
+        } */
 
-    //FIXME: add traveled node (and add this)
-    public findNodeWithTraveledNodes(request: FindNodeRequest): FindNodeResponse {
+
+    public findNode(request: FindNodeRequest): FindNodeResponse {
 
         // update my routing table with the traversed nodes
         this.updateRoutingTable(request.traveledNodes);
@@ -55,8 +55,12 @@ export class Node {
         let kAbsoluteClosest: Array<Node> = [];
 
         // get alpha nodes that for this node are closer to the target
+        let traveledNodes: Array<Node> = [this];
+        const findNodeResponse = this.findNode(
+            new FindNodeRequest(target, traveledNodes)
+        );
         let myClosestNodes = NodeArrayHelper
-            .from(this.findNode(target))
+            .from(findNodeResponse.closestNodes)
             .selectDistinct()
             .sortByXorDistanceTo(target)
             .limit(this.constants.alpha)
@@ -66,7 +70,7 @@ export class Node {
         let closestNode: Node = myClosestNodes[0]; // there is always at least the head of this array (the bootstrap node)
 
         // the nodes returned by the current cycle findNode()
-        let maybeQueriedNodes: Array<Node> = myClosestNodes;
+        let alphaMaybeQueriedNodes: Array<Node> = myClosestNodes;
 
         // contains the identifiers already queried
         const queriedIdentifiers: Map<number, boolean> = new Map();
@@ -76,23 +80,33 @@ export class Node {
 
         do {
             // contains at most the k*alpha nodes returned by the alpha nodes in the maybeQueriedNodes array
-            const currentNodes: Array<Node> = [];
+            let currentNodes: Array<Node> = [];
 
             // the following cycle will always be performed in an array
             // of at max this.constants.alpha times, by design
 
-            maybeQueriedNodes.forEach(node => {
+            alphaMaybeQueriedNodes.forEach(node => {
                 // add all nodes if they are not already queried
                 if (!queriedIdentifiers.has(node.identifier.id)) {
                     // this node hasn't been queried yet
-                    currentNodes.push(
-                        // add all k nodes returned from this node
-                        ...node.findNode(target)
+                    const traveledNodesResponse = node.findNode(
+                        new FindNodeRequest(
+                            target,
+                            traveledNodes
+                        )
                     );
+                    traveledNodes = traveledNodes.concat(traveledNodesResponse.traveledNodes);
+
+                    // add all k nodes returned from this node
+                    currentNodes = currentNodes.concat(traveledNodesResponse.closestNodes);
+
                     // mark it as queried
                     queriedIdentifiers.set(node.identifier.id, true);
                 }
             });
+
+            //VERIFY: insert only the k closest and not all k*alpha
+            this.updateRoutingTable(currentNodes);
 
             // compute closest node of this run
             const runClosestNode = currentNodes.find(n => n.getDistanceTo(target) < closestNode.getDistanceTo(target));
@@ -105,16 +119,18 @@ export class Node {
                 kAbsoluteClosest = NodeArrayHelper
                     .fromMerge(kAbsoluteClosest, currentNodes)
                     .selectDistinct()
+                    .removeAnyInside(queriedIdentifiers.keys())
                     .sortByXorDistanceTo(target)
                     .limit(this.constants.k)
                     .get()
 
                 // make a step closer, choose alpha closest nodes in which perform a findNode()
-                maybeQueriedNodes = NodeArrayHelper
+                alphaMaybeQueriedNodes = NodeArrayHelper
                     .from(kAbsoluteClosest)
                     .selectDistinct()
+                    .removeAnyInside(queriedIdentifiers.keys())
                     .sortByXorDistanceTo(target)
-                    .limit(this.constants.k)
+                    .limit(this.constants.alpha)
                     .get()
 
             } else {
@@ -127,7 +143,12 @@ export class Node {
         // call a findNode() to all k closest nodes not already queried
         kAbsoluteClosest.forEach(node => {
             if (!queriedIdentifiers.has(node.identifier.id))
-                node.findNode(target);
+                node.findNode(
+                    new FindNodeRequest(
+                        target,
+                        traveledNodes
+                    )
+                );
         });
 
         return kAbsoluteClosest;
