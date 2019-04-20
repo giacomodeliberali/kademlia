@@ -55,7 +55,7 @@ export class Node {
         let kAbsoluteClosest: Array<Node> = [];
 
         // get alpha nodes that for this node are closer to the target
-        let traveledNodes: Array<Node> = [this];
+        let traveledNodes: Array<Node> = [];
         const findNodeResponse = this.findNode(
             new FindNodeRequest(target, traveledNodes)
         );

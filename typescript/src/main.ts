@@ -4,8 +4,8 @@ import * as fs from "fs";
 
 (() => {
     const m = 25;
-    const n = 1000;
-    const k = 5;
+    const n = 100;
+    const k = 3;
     const alpha = 3;
 
     const constants = new Constants(k, m, n, alpha);

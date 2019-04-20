@@ -64,9 +64,9 @@ export class Coordinator {
         newNodeToJoin.updateRoutingTable(bootstrapNode);
 
         // perform a self-lookup
-        newNodeToJoin.updateRoutingTable(
-            newNodeToJoin.lookup(newNodeToJoin.identifier)
-        );
+        const selfLookup = newNodeToJoin.lookup(newNodeToJoin.identifier);
+        //console.log(`SelfLookup of ${newNodeToJoin.identifier.id}: `, selfLookup);
+        newNodeToJoin.updateRoutingTable(selfLookup);
 
         // refreshes all k-buckets 
         for (let i = 0; i < this.constants.m; i++) {
