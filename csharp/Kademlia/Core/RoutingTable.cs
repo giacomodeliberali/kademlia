@@ -75,14 +75,34 @@ namespace Kademlia.Core
             var kClosestNodes = new List<Node>();
             kClosestNodes.AddRange(closestBucket.Nodes);
 
-            foreach(var bucket in Buckets)
+            var direction = -1;
+            var left = bucketIndex - 1;
+            var right = bucketIndex + 1;
+
+
+            while (kClosestNodes.Count() < Coordinator.Constants.K)
             {
-                kClosestNodes.AddRange(bucket.Nodes);
+                if (direction < 0 && left >= 0)
+                {
+                    kClosestNodes.AddRange(Buckets[left].Nodes);
+                    left--;
+                }
+
+                if (direction > 0 && right < Buckets.Count())
+                {
+                    kClosestNodes.AddRange(Buckets[right].Nodes);
+                    right++;
+                }
+
+                direction *= -1;
+
+                if (left < 0 && right >= Buckets.Count())
+                {
+                    break;
+                }
             }
 
-            return kClosestNodes
-                .Distinct()
-                .ToList();
+            return kClosestNodes.ToList();
 
         }
 

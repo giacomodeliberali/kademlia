@@ -12,6 +12,7 @@ namespace Kademlia.Core
 
             coordinator.BootstrapNetwork();
 
+            Console.ReadKey();
 
         }
     }

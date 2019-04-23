@@ -89,7 +89,7 @@ namespace Kademlia.Helpers
                 );
             } while (extractedIdentifiers.Contains(identifier));
 
-            this.extractedIdentifiers.Add(identifier);
+            extractedIdentifiers.Add(identifier);
 
             return identifier;
         }

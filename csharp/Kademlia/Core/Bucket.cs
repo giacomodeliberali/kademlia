@@ -75,7 +75,8 @@ namespace Kademlia.Core
             }
 
             // the node does not exist and the bucket is full. So ping least seen node 
-            var leastSeenNode = Nodes[0];
+            var leastSeenNode = Nodes.First();
+            Nodes.Remove(leastSeenNode);
 
             if (leastSeenNode.Ping())
             {
@@ -85,7 +86,7 @@ namespace Kademlia.Core
             else
             {
                 // promote new node and discard least seen node 
-               Nodes.Add(target);
+                Nodes.Add(target);
             }
         }
 

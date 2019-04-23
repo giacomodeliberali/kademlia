@@ -62,10 +62,10 @@ namespace Kademlia.Core
             PrintRoutingTableContent(nodeToJoin);
 
             // perform a self-lookup
-            var kClosest = nodeToJoin.Lookup(nodeToJoin.Id);
-            Console.WriteLine($"  - self lookup return: {string.Join(", ", kClosest.Select(n => n.ToString()))}");
-            nodeToJoin.UpdateRoutingTable(kClosest);
-            PrintRoutingTableContent(nodeToJoin);
+            //var kClosest = nodeToJoin.Lookup(nodeToJoin.Id);
+            //Console.WriteLine($"  - self lookup return: {string.Join(", ", kClosest.Select(n => n.ToString()))}");
+            //nodeToJoin.UpdateRoutingTable(kClosest);
+            //PrintRoutingTableContent(nodeToJoin);
 
             // refreshes all k-buckets 
             for (var bucketIndex = 0; bucketIndex < Constants.M; bucketIndex++)
@@ -73,7 +73,7 @@ namespace Kademlia.Core
                 // generate a random id (never extracted) for each bucket range
                 var randomNodeIdentifierInBucket = IdentifierGenerator.Instance.GenerateRandomInBucket(bucketIndex);
                 // and make a lookup of the new node
-                kClosest = nodeToJoin.Lookup(randomNodeIdentifierInBucket);
+                var kClosest = nodeToJoin.Lookup(randomNodeIdentifierInBucket);
                 Console.WriteLine($"  - refreshing with lookup of {randomNodeIdentifierInBucket} return: {string.Join(", ", kClosest.Select(n => n.ToString()))}");
                 nodeToJoin.UpdateRoutingTable(kClosest);
                 PrintRoutingTableContent(nodeToJoin);

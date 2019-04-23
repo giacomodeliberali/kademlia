@@ -27,7 +27,7 @@ namespace Kademlia.Core
         public void UpdateRoutingTable(IEnumerable<Node> nodes)
         {
             foreach (var node in nodes)
-                RoutingTable.Insert(node);
+                UpdateRoutingTable(node);
         }
 
         public void UpdateRoutingTable(Node node)
@@ -37,21 +37,15 @@ namespace Kademlia.Core
 
         public FindNodeResponse FindNode(FindNodeRequest request)
         {
+            var closestNodes = RoutingTable.GetKClosestTo(request.Target);
+
             // update my routing table with the traversed nodes
             UpdateRoutingTable(request.TraveledNodes);
 
-            // add myself to traveled nodes
-            var traveledNodesPlusMe = request.TraveledNodes;
-            traveledNodesPlusMe.Add(this);
-
-            var closestNodes = RoutingTable.GetKClosestTo(request.Target);
-
-            Console.WriteLine($" => {Id}.FindNode({request.Target}) = {string.Join(", ", closestNodes.Select(n => n.ToString()))}");
-
-            // return the k-closest nodes
+            // return the k-closest nodes and add myself to traveled nodes
             return new FindNodeResponse
             {
-                TraveledNodes = traveledNodesPlusMe,
+                TraveledNodes = request.TraveledNodes.Concat(new List<Node> { this }).ToList(),
                 ClosestNodes = closestNodes
             };
         }
