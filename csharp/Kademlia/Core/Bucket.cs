@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Kademlia.Core
@@ -15,6 +16,11 @@ namespace Kademlia.Core
         /// The number of max nodes contained in this bucket
         /// </summary>
         private readonly int k;
+
+        /// <summary>
+        /// The node this bucket refers to
+        /// </summary>
+        private readonly Node node;
 
         /// <summary>
         /// Gets the nodes present in this bucket
@@ -43,10 +49,11 @@ namespace Kademlia.Core
         /// Initializes a new instance of the <see cref="T:Kademlia.Core.Bucket"/> class.
         /// </summary>
         /// <param name="k">The number of max nodes contained in this bucket</param>
-        public Bucket(int k)
+        public Bucket(Node node, int k)
         {
             this.k = k;
-            this.Nodes = new List<Node>();
+            this.node = node;
+            Nodes = new List<Node>();
         }
 
         #endregion

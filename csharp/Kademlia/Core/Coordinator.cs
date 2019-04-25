@@ -10,7 +10,7 @@ namespace Kademlia.Core
     {
         public static Constants Constants { get; set; }
 
-        private List<Node> nodes = new List<Node>();
+        private readonly List<Node> nodes = new List<Node>();
 
 
         public Coordinator(Constants constants)
@@ -33,24 +33,28 @@ namespace Kademlia.Core
 
             Console.WriteLine($"Bootstrap node id is {bootNode.Id}\n");
 
-            for (var i = 1; i < Constants.N; i++)
+            for (var i = 0; i < Constants.N - 1; i++)
+            {
                 JoinNewNode();
+                Console.Write($"\rJoined {i}/{Constants.N}");
+            }
 
             var edgesCount = 0;
             nodes.ForEach(node =>
             {
-                foreach (var bucket in node.RoutingTable.Buckets)
-                    edgesCount += bucket.Nodes.Count();
+                node.RoutingTable.Buckets.ToList().ForEach(bucket =>
+                {
+                    edgesCount += bucket.Nodes.Count;
+                });
             });
 
-            Console.WriteLine($"Generated {edgesCount} edges (max is {Constants.N * Constants.M * Constants.K})");
+            Console.WriteLine($"\rGenerated {edgesCount} edges (max is {Constants.N * Constants.M * Constants.K})");
         }
 
         private void JoinNewNode()
         {
             // choose bootstrap node of newNode
-            var randomBootNode = IdentifierGenerator.Instance.GetRandomExistingId();
-            var bootstrapNode = new Node(randomBootNode);
+            var bootstrapNode = GetRandomBootstrap();
 
             // generate a new node
             var nodeToJoin = new Node();
@@ -58,41 +62,23 @@ namespace Kademlia.Core
             // insert bootstrap into new node's routing table
             nodeToJoin.UpdateRoutingTable(bootstrapNode);
 
-            Console.WriteLine($"Joining node {nodeToJoin} with bootstrap {bootstrapNode}");
-            PrintRoutingTableContent(nodeToJoin);
-
-            // perform a self-lookup
-            //var kClosest = nodeToJoin.Lookup(nodeToJoin.Id);
-            //Console.WriteLine($"  - self lookup return: {string.Join(", ", kClosest.Select(n => n.ToString()))}");
-            //nodeToJoin.UpdateRoutingTable(kClosest);
-            //PrintRoutingTableContent(nodeToJoin);
-
             // refreshes all k-buckets 
             for (var bucketIndex = 0; bucketIndex < Constants.M; bucketIndex++)
             {
                 // generate a random id (never extracted) for each bucket range
                 var randomNodeIdentifierInBucket = IdentifierGenerator.Instance.GenerateRandomInBucket(bucketIndex);
                 // and make a lookup of the new node
-                var kClosest = nodeToJoin.Lookup(randomNodeIdentifierInBucket);
-                Console.WriteLine($"  - refreshing with lookup of {randomNodeIdentifierInBucket} return: {string.Join(", ", kClosest.Select(n => n.ToString()))}");
-                nodeToJoin.UpdateRoutingTable(kClosest);
-                PrintRoutingTableContent(nodeToJoin);
+                nodeToJoin.UpdateRoutingTable(
+                    nodeToJoin.Lookup(randomNodeIdentifierInBucket)
+                );
             }
-
             nodes.Add(nodeToJoin);
         }
 
-        private void PrintRoutingTableContent(Node node)
+        private Node GetRandomBootstrap()
         {
-            Console.Write($"  - routing table content: ");
-            foreach (var bucket in node.RoutingTable.Buckets)
-            {
-                foreach (var n in bucket.Nodes)
-                {
-                    Console.Write($"{n} ");
-                }
-            }
-            Console.WriteLine("");
+            return nodes[new Random().Next(nodes.Count)];
         }
+
     }
 }

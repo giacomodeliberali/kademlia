@@ -1,16 +1,10 @@
-﻿using System;
-using System.Numerics;
+﻿using System.Numerics;
 
 namespace Kademlia.Core
 {
     public class Identifier
     {
         private readonly BigInteger id;
-
-        public Identifier()
-        {
-
-        }
 
         public Identifier(BigInteger id)
         {
@@ -19,7 +13,7 @@ namespace Kademlia.Core
 
         public BigInteger GetDistanceTo(Identifier target)
         {
-            return this.id ^ target.id;
+            return id ^ target.id;
         }
 
         public bool Equals(long id)
@@ -32,7 +26,7 @@ namespace Kademlia.Core
             if (!(obj is Identifier target))
                 return false;
 
-            return target.id == this.id;
+            return target.id == id;
         }
 
         public override int GetHashCode()

@@ -37,9 +37,9 @@ namespace Kademlia.Core
             this.node = node;
 
             // initialize M buckets
-            this.Buckets = new List<Bucket>();
+            Buckets = new List<Bucket>();
             for (var i = 0; i < Coordinator.Constants.M; i++)
-                this.Buckets.Add(new Bucket(Coordinator.Constants.K));
+                Buckets.Add(new Bucket(this.node, Coordinator.Constants.K));
         }
 
         #endregion
@@ -55,7 +55,8 @@ namespace Kademlia.Core
             if (node.Id.Equals(target.Id))
                 return;
 
-            var closestBucket = GetClosestBucket(target.Id);
+            var closestBucketIndex = GetClosestBucketIndex(target.Id);
+            var closestBucket = Buckets[closestBucketIndex];
             closestBucket.Insert(target);
         }
 
@@ -64,46 +65,61 @@ namespace Kademlia.Core
         /// </summary>
         /// <returns>The K closest to the target identifier.</returns>
         /// <param name="target">Identifier.</param>
-        public IList<Node> GetKClosestTo(Identifier target)
+        public List<Node> GetKClosestTo(Identifier target)
         {
 
-            // take closes bucket
-            var closestBucket = GetClosestBucket(target);
-            var bucketIndex = Buckets.IndexOf(closestBucket);
+            // take closest bucket
+            var bucketIndex = GetClosestBucketIndex(target);
+            var closestBucket = Buckets[bucketIndex];
 
             // get all its nodes
             var kClosestNodes = new List<Node>();
             kClosestNodes.AddRange(closestBucket.Nodes);
 
-            var direction = -1;
+            var direction = -1; // -1 equals left, right otherwise
             var left = bucketIndex - 1;
             var right = bucketIndex + 1;
 
 
-            while (kClosestNodes.Count() < Coordinator.Constants.K)
+            while (kClosestNodes.Count < Coordinator.Constants.K)
             {
                 if (direction < 0 && left >= 0)
                 {
+                    // I'm going left and the left index is valid
                     kClosestNodes.AddRange(Buckets[left].Nodes);
                     left--;
                 }
 
-                if (direction > 0 && right < Buckets.Count())
+                if (direction > 0 && right < Buckets.Count)
                 {
+                    // I'm going right and the right index is valid
                     kClosestNodes.AddRange(Buckets[right].Nodes);
                     right++;
                 }
 
-                direction *= -1;
+                direction *= -1; // reverse the direction
 
-                if (left < 0 && right >= Buckets.Count())
+                if (left < 0 && right >= Buckets.Count)
                 {
+                    // break if indexes are out of bounds (all cell visited)
                     break;
                 }
             }
 
-            return kClosestNodes.ToList();
+            return kClosestNodes;
+        }
 
+        public void PrintContent()
+        {
+            Console.Write($"Routing table content of node {node}: ");
+            foreach (var bucket in node.RoutingTable.Buckets)
+            {
+                foreach (var n in bucket.Nodes)
+                {
+                    Console.Write($"{n} ");
+                }
+            }
+            Console.WriteLine("");
         }
 
         #endregion
@@ -111,24 +127,26 @@ namespace Kademlia.Core
         #region Private interface
 
         /// <summary>
-        /// Gets the closest bucket.
+        /// Gets the closest bucket index.
         /// </summary>
-        /// <returns>The closest bucket.</returns>
+        /// <returns>The closest bucket index.</returns>
         /// <param name="target">Target.</param>
-        private Bucket GetClosestBucket(Identifier target)
+        private int GetClosestBucketIndex(Identifier target)
         {
-            var distance = this.node.Id.GetDistanceTo(target);
+            var distance = node.Id.GetDistanceTo(target);
 
-            if (distance == 0)
-                return this.Buckets[0];
+            return (int)(Math.Log((long)distance) / Math.Log(2));
 
-            for (var i = 0; i < Buckets.Count; i++)
-            {
-                if (distance >= BigInteger.Pow(2, i) && distance < (BigInteger.Pow(2, i + 1)))
-                    return Buckets[i];
-            }
+            //if (distance == 0)
+            //    return 0;
 
-            throw new ArgumentException("The given identifier does not match the 2^m limit");
+            //for (var i = 0; i < Buckets.Count; i++)
+            //{
+            //    if (distance >= BigInteger.Pow(2, i) && distance < BigInteger.Pow(2, i + 1))
+            //        return i;
+            //}
+
+            //throw new ArgumentException("The given identifier does not match the 2^m limit");
         }
 
         #endregion

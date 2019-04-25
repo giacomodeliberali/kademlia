@@ -32,53 +32,74 @@ namespace Kademlia.Core
 
         public void UpdateRoutingTable(Node node)
         {
+            if (Id.Equals(node.Id))
+                return;
+
             RoutingTable.Insert(node);
         }
-
-        public FindNodeResponse FindNode(FindNodeRequest request)
+        public FindNodeResponse FindNode(Identifier target)
         {
-            var closestNodes = RoutingTable.GetKClosestTo(request.Target);
+            return FindNode(target, new List<Node>());
+        }
 
-            // update my routing table with the traversed nodes
-            UpdateRoutingTable(request.TraveledNodes);
+        public FindNodeResponse FindNode(Identifier target, List<Node> traveledNodes)
+        {
+            // retrive closest known nodes
+            var closestNodes = RoutingTable.GetKClosestTo(target);
 
-            // return the k-closest nodes and add myself to traveled nodes
+            // add myself to the list of visited nodes
+            var traveledNodesPlusMe = new List<Node>();
+            traveledNodesPlusMe.AddRange(traveledNodes);
+            traveledNodesPlusMe.Add(this);
+
+            // update my routing table with the traveled nodes
+            UpdateRoutingTable(traveledNodes);
+
+            // return the k-closest nodes and the traveled nodes
             return new FindNodeResponse
             {
-                TraveledNodes = request.TraveledNodes.Concat(new List<Node> { this }).ToList(),
+                TraveledNodes = traveledNodesPlusMe,
                 ClosestNodes = closestNodes
             };
         }
 
         public IList<Node> Lookup(Identifier target)
         {
-            // contains the k absolute closest nodes to the target (returned value)
-            var kAbsoluteClosest = new List<Node>();
-
             // get alpha nodes that for this node are closer to the target
-            var traveledNodes = new List<Node>();
-            var findNodeResponse = FindNode(
-                new FindNodeRequest
-                {
-                    Target = target,
-                    TraveledNodes = traveledNodes
-                });
+            var findNodeResponse = FindNode(target);
+
+            // the traveled nodes
+            var traveledNodes = findNodeResponse.TraveledNodes;
 
             var myClosestNodes = findNodeResponse.ClosestNodes
                 .OrderBy(n => n.Id.GetDistanceTo(target))
                 .Take(Coordinator.Constants.Alpha)
                 .ToList();
 
-            kAbsoluteClosest.AddRange(myClosestNodes); //FIXME: ???
+            // i do not know any closer node
+            if (myClosestNodes.Count == 0)
+            {
+                //Console.WriteLine($" - end lookup = none");
+                return myClosestNodes;
+            }
 
-            // the closest known node 
-            var closestNode = myClosestNodes.First(); // there is always at least the head of this array (the bootstrap node)
+            // contains the k absolute closest nodes to the target (returned value)
+            var kAbsoluteClosest = new List<Node>()
+                .Concat(myClosestNodes)
+                .ToList();
+
+            // the closest known node => there is always at least the head of this list (the bootstrap node)
+            var closestNode = myClosestNodes.First();
 
             // the nodes returned by the current cycle findNode()
             var alphaMaybeQueriedNodes = myClosestNodes;
 
             // contains the identifiers already queried
-            var queriedIdentifiers = new HashSet<Identifier>();
+            var queriedIdentifiers = new HashSet<Identifier>
+            {
+                // a FindNode() on my self for this target has already been performed
+                Id
+            };
 
             // indicates if there are more closer nodes, so if the findNode() should advance
             var hasCloserNodes = true;
@@ -96,17 +117,12 @@ namespace Kademlia.Core
                     if (!queriedIdentifiers.Contains(node.Id))
                     {
                         // this node hasn't been queried yet
-                        var traveledNodesResponse = node.FindNode(
-                            new FindNodeRequest
-                            {
-                                Target = target,
-                                TraveledNodes = traveledNodes
-                            });
+                        var response = node.FindNode(target, traveledNodes);
 
-                        traveledNodes = traveledNodes.Concat(traveledNodesResponse.TraveledNodes).ToList();
+                        //traveledNodes = response.TraveledNodes;
 
                         // add all k nodes returned from this node
-                        currentNodes = currentNodes.Concat(traveledNodesResponse.ClosestNodes).ToList();
+                        currentNodes = currentNodes.Concat(response.ClosestNodes).ToList();
 
                         // mark it as queried
                         queriedIdentifiers.Add(node.Id);
@@ -150,20 +166,12 @@ namespace Kademlia.Core
             kAbsoluteClosest.ForEach(node =>
             {
                 if (!queriedIdentifiers.Contains(node.Id))
-                    node.FindNode(
-                        new FindNodeRequest
-                        {
-                            Target = target,
-                            TraveledNodes = traveledNodes
-                        }
-                    );
+                    node.FindNode(target, traveledNodes);
             });
-
-            if (!kAbsoluteClosest.Any())
-                throw new Exception("Lookup cannot return empty list!");
 
             return kAbsoluteClosest;
         }
+
 
         public bool Ping()
         {

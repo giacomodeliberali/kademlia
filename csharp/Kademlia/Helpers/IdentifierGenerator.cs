@@ -94,11 +94,6 @@ namespace Kademlia.Helpers
             return identifier;
         }
 
-        public Identifier GetRandomExistingId()
-        {
-            return extractedIdentifiers[new Random().Next(extractedIdentifiers.Count)];
-        }
-
         public Identifier GetUniqueRandomInRange(BigInteger min, BigInteger max)
         {
             BigInteger random;

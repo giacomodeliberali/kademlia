@@ -43,7 +43,6 @@
     <Compile Include="Core\RoutingTable.cs" />
     <Compile Include="Core\Identifier.cs" />
     <Compile Include="Helpers\IdentifierGenerator.cs" />
-    <Compile Include="Models\FindNodeRequest.cs" />
     <Compile Include="Models\FindNodeResponse.cs" />
   </ItemGroup>
   <ItemGroup />
