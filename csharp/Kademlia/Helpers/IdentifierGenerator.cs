@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Collections;
+﻿using System.Linq;
 using System.Collections.Generic;
 using Kademlia.Core;
 using System.Numerics;
@@ -8,20 +6,105 @@ using System.Security.Cryptography;
 
 namespace Kademlia.Helpers
 {
+    /// <summary>
+    /// The <see cref="T:Kademlia.Core.Identifier"/> generator.
+    /// </summary>
     public class IdentifierGenerator
     {
-
-        private IList<Identifier> extractedIdentifiers = new List<Identifier>();
-        private RandomNumberGenerator randomNumberGenerator = RandomNumberGenerator.Create();
+        #region Fields & Properties
 
         public static IdentifierGenerator Instance { get; } = new IdentifierGenerator();
 
+        /// <summary>
+        /// The extracted identifiers.
+        /// </summary>
+        private readonly IList<Identifier> extractedIdentifiers = new List<Identifier>();
+
+        /// <summary>
+        /// The random number generator.
+        /// </summary>
+        private readonly RandomNumberGenerator randomNumberGenerator = RandomNumberGenerator.Create();
+
+        /// <summary>
+        /// The identifiers limit.
+        /// </summary>
+        private readonly BigInteger identifiersLimit;
+
+        #endregion
+
+        #region Constructors
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Kademlia.Helpers.IdentifierGenerator"/> class.
+        /// </summary>
         private IdentifierGenerator()
         {
-
+            identifiersLimit = BigInteger.Pow(2, Coordinator.Constants.M) - 1;
         }
 
-        public BigInteger GetRandomInRange(BigInteger min, BigInteger max)
+        #endregion
+
+        #region Public APIs
+
+        /// <summary>
+        /// Generates a random identifier.
+        /// </summary>
+        /// <returns>The identifier.</returns>
+        public Identifier GenerateIdentifier()
+        {
+            Identifier identifier;
+            do
+            {
+                identifier = new Identifier(
+                    GetRandomInRange(BigInteger.Zero, identifiersLimit)
+                );
+            } while (extractedIdentifiers.Contains(identifier));
+
+            extractedIdentifiers.Add(identifier);
+
+            return identifier;
+        }
+
+        /// <summary>
+        /// Generates a random identifier in the specified bucket range.
+        /// </summary>
+        /// <returns>The random in bucket.</returns>
+        /// <param name="bucketIndex">Bucket index.</param>
+        public Identifier GenerateRandomInBucket(int bucketIndex)
+        {
+            BigInteger low = BigInteger.Pow(2, bucketIndex);
+            BigInteger high = BigInteger.Pow(2, bucketIndex + 1) - 1;
+            return GetUniqueRandomInRange(low, high);
+        }
+
+        #endregion
+
+        #region Private APIs
+
+        /// <summary>
+        /// Gets a unique random in range without adding it to the generated list.
+        /// </summary>
+        /// <returns>The unique random in range.</returns>
+        /// <param name="min">Minimum.</param>
+        /// <param name="max">Max.</param>
+        private Identifier GetUniqueRandomInRange(BigInteger min, BigInteger max)
+        {
+            BigInteger random;
+            do
+            {
+                random = GetRandomInRange(min, max);
+            } while (extractedIdentifiers.FirstOrDefault(id => id.Equals(random)) != null);
+
+            return new Identifier(random);
+        }
+
+        /// <summary>
+        /// Gets the random in range.
+        /// </summary>
+        /// <returns>The random in range.</returns>
+        /// <param name="min">Minimum.</param>
+        /// <param name="max">Max.</param>
+        private BigInteger GetRandomInRange(BigInteger min, BigInteger max)
         {
             if (min > max)
             {
@@ -37,6 +120,11 @@ namespace Kademlia.Helpers
             return GetRandomInRangeFromZeroTo(max) - offset;
         }
 
+        /// <summary>
+        /// Gets the random in range from zero to max.
+        /// </summary>
+        /// <returns>The random in range from zero to max.</returns>
+        /// <param name="max">Max.</param>
         private BigInteger GetRandomInRangeFromZeroTo(BigInteger max)
         {
             BigInteger value;
@@ -76,40 +164,6 @@ namespace Kademlia.Helpers
             return value;
         }
 
-
-        public Identifier GenerateIdentifier()
-        {
-            var limit = BigInteger.Pow(2, Coordinator.Constants.M) - 1;
-
-            Identifier identifier;
-            do
-            {
-                identifier = new Identifier(
-                    GetRandomInRange(BigInteger.Zero, limit)
-                );
-            } while (extractedIdentifiers.Contains(identifier));
-
-            extractedIdentifiers.Add(identifier);
-
-            return identifier;
-        }
-
-        public Identifier GetUniqueRandomInRange(BigInteger min, BigInteger max)
-        {
-            BigInteger random;
-            do
-            {
-                random = GetRandomInRange(min, max);
-            } while (extractedIdentifiers.FirstOrDefault(id => id.Equals(random)) != null);
-
-            return new Identifier(random);
-        }
-
-        public Identifier GenerateRandomInBucket(int bucketIndex)
-        {
-            BigInteger low = BigInteger.Pow(2, bucketIndex);
-            BigInteger high = BigInteger.Pow(2, bucketIndex + 1) - 1;
-            return GetUniqueRandomInRange(low, high);
-        }
+        #endregion
     }
 }

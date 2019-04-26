@@ -9,18 +9,12 @@ namespace Kademlia.Core
     /// </summary>
     public class Bucket
     {
-
         #region Fields & Properties
 
         /// <summary>
         /// The number of max nodes contained in this bucket
         /// </summary>
         private readonly int k;
-
-        /// <summary>
-        /// The node this bucket refers to
-        /// </summary>
-        private readonly Node node;
 
         /// <summary>
         /// Gets the nodes present in this bucket
@@ -49,16 +43,15 @@ namespace Kademlia.Core
         /// Initializes a new instance of the <see cref="T:Kademlia.Core.Bucket"/> class.
         /// </summary>
         /// <param name="k">The number of max nodes contained in this bucket</param>
-        public Bucket(Node node, int k)
+        public Bucket(int k)
         {
             this.k = k;
-            this.node = node;
             Nodes = new List<Node>();
         }
 
         #endregion
 
-        #region Public interface
+        #region Public APIs
 
         /// <summary>
         /// Insert the specified target into the right bucket.
@@ -103,6 +96,5 @@ namespace Kademlia.Core
         }
 
         #endregion
-
     }
 }

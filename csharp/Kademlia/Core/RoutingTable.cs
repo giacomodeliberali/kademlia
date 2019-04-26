@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.Numerics;
 
@@ -39,12 +38,12 @@ namespace Kademlia.Core
             // initialize M buckets
             Buckets = new List<Bucket>();
             for (var i = 0; i < Coordinator.Constants.M; i++)
-                Buckets.Add(new Bucket(this.node, Coordinator.Constants.K));
+                Buckets.Add(new Bucket(Coordinator.Constants.K));
         }
 
         #endregion
 
-        #region Public interface
+        #region Public APIs
 
         /// <summary>
         /// Insert the specified node into the right bucket.
@@ -109,22 +108,9 @@ namespace Kademlia.Core
             return kClosestNodes;
         }
 
-        public void PrintContent()
-        {
-            Console.Write($"Routing table content of node {node}: ");
-            foreach (var bucket in node.RoutingTable.Buckets)
-            {
-                foreach (var n in bucket.Nodes)
-                {
-                    Console.Write($"{n} ");
-                }
-            }
-            Console.WriteLine("");
-        }
-
         #endregion
 
-        #region Private interface
+        #region Private APIs
 
         /// <summary>
         /// Gets the closest bucket index.
@@ -134,22 +120,9 @@ namespace Kademlia.Core
         private int GetClosestBucketIndex(Identifier target)
         {
             var distance = node.Id.GetDistanceTo(target);
-
-            return (int)(Math.Log((long)distance) / Math.Log(2));
-
-            //if (distance == 0)
-            //    return 0;
-
-            //for (var i = 0; i < Buckets.Count; i++)
-            //{
-            //    if (distance >= BigInteger.Pow(2, i) && distance < BigInteger.Pow(2, i + 1))
-            //        return i;
-            //}
-
-            //throw new ArgumentException("The given identifier does not match the 2^m limit");
+            return (int)(BigInteger.Log(distance) / Math.Log(2));
         }
 
         #endregion
-
     }
 }

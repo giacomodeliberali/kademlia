@@ -2,34 +2,71 @@
 using System.Collections.Generic;
 using Kademlia.Helpers;
 using Kademlia.Models;
-using System;
 
 namespace Kademlia.Core
 {
+    /// <summary>
+    /// A Kademlia node.
+    /// </summary>
     public class Node
     {
+        #region Fields & Properties
 
+        /// <summary>
+        /// Gets the identifier.
+        /// </summary>
+        /// <value>The identifier.</value>
         public Identifier Id { get; }
+
+        /// <summary>
+        /// Gets the routing table.
+        /// </summary>
+        /// <value>The routing table.</value>
         public RoutingTable RoutingTable { get; }
 
+        #endregion
+
+        #region Constructors
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Kademlia.Core.Node"/> class.
+        /// Generates a new <see cref="T:Kademlia.Core.Identifier"/> for this node.
+        /// </summary>
         public Node()
         {
             Id = IdentifierGenerator.Instance.GenerateIdentifier();
             RoutingTable = new RoutingTable(this);
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Kademlia.Core.Node"/> class.
+        /// Uses the specified <see cref="T:Kademlia.Core.Identifier"/> for this node.
+        /// </summary>
+        /// <param name="identifier">Identifier.</param>
         public Node(Identifier identifier)
         {
             Id = identifier;
             RoutingTable = new RoutingTable(this);
         }
 
+        #endregion
+
+        #region Public APIs
+
+        /// <summary>
+        /// Updates the routing table.
+        /// </summary>
+        /// <param name="nodes">Nodes.</param>
         public void UpdateRoutingTable(IEnumerable<Node> nodes)
         {
             foreach (var node in nodes)
                 UpdateRoutingTable(node);
         }
 
+        /// <summary>
+        /// Updates the routing table.
+        /// </summary>
+        /// <param name="node">Node.</param>
         public void UpdateRoutingTable(Node node)
         {
             if (Id.Equals(node.Id))
@@ -37,11 +74,22 @@ namespace Kademlia.Core
 
             RoutingTable.Insert(node);
         }
+
+        /// <summary>
+        /// Return all the known closest nodes to the target and update the routing table with traveled nodes.
+        /// </summary>
+        /// <returns>The nodes and the traveled nodes with this instance appended.</returns>
+        /// <param name="target">The target node.</param>
         public FindNodeResponse FindNode(Identifier target)
         {
             return FindNode(target, new List<Node>());
         }
 
+        /// <summary>
+        /// Return all the known closest nodes to the target and update the routing table with traveled nodes.
+        /// </summary>
+        /// <returns>The nodes and the traveled nodes with this instance appended.</returns>
+        /// <param name="target">The target node.</param>
         public FindNodeResponse FindNode(Identifier target, List<Node> traveledNodes)
         {
             // retrive closest known nodes
@@ -63,7 +111,12 @@ namespace Kademlia.Core
             };
         }
 
-        public IList<Node> Lookup(Identifier target)
+        /// <summary>
+        /// Lookup the specified target.
+        /// </summary>
+        /// <returns>The k absolute closest node in the network to the target node.</returns>
+        /// <param name="target">The target node.</param>
+        public List<Node> Lookup(Identifier target)
         {
             // get alpha nodes that for this node are closer to the target
             var findNodeResponse = FindNode(target);
@@ -172,15 +225,24 @@ namespace Kademlia.Core
             return kAbsoluteClosest;
         }
 
-
+        /// <summary>
+        /// Ping this instance.
+        /// </summary>
+        /// <returns>The ping (always true).</returns>
         public bool Ping()
         {
             return true;
         }
 
+        /// <summary>
+        /// Returns a <see cref="T:System.String"/> that represents the current <see cref="T:Kademlia.Core.Node"/>.
+        /// </summary>
+        /// <returns>A <see cref="T:System.String"/> that represents the current <see cref="T:Kademlia.Core.Node"/>.</returns>
         public override string ToString()
         {
             return Id.ToString();
         }
+
+        #endregion
     }
 }
