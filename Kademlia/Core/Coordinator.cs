@@ -89,7 +89,7 @@ namespace Kademlia.Core
         public void GenerateGraph()
         {
             var csv = new StringBuilder();
-            csv.AppendLine($"Source;Target");
+            //csv.AppendLine($"Source;Target");
             nodes.ForEach(node =>
             {
                 node.RoutingTable.Buckets.ToList().ForEach(bucket =>
@@ -100,9 +100,17 @@ namespace Kademlia.Core
                     });
                 });
             });
-            var fileName = $"graph_n{Constants.N}_m{Constants.M}_k{Constants.K}_alpha{Constants.Alpha}.csv";
 
-            File.WriteAllText($"../../stats/{fileName}", csv.ToString());
+            String fileName;
+            String path;
+            int i = 1;
+            do
+            {
+                fileName = $"graph_n{Constants.N}_m{Constants.M}_k{Constants.K}_alpha{Constants.Alpha}-{i++}.csv";
+                path = $"./stats/{fileName}";
+            } while (File.Exists(path));
+
+            File.WriteAllText(path, csv.ToString());
         }
 
         #endregion

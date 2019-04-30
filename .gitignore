@@ -2,3 +2,6 @@
 bin/
 obj/
 stats/
+plots*/
+gephi/
+test/

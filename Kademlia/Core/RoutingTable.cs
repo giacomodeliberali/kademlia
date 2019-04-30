@@ -120,7 +120,12 @@ namespace Kademlia.Core
         private int GetClosestBucketIndex(Identifier target)
         {
             var distance = node.Id.GetDistanceTo(target);
-            return (int)(BigInteger.Log(distance) / Math.Log(2));
+            var index = (int)(BigInteger.Log(distance) / Math.Log(2));
+
+            if(index < 0)
+                return 0;
+
+            return index;
         }
 
         #endregion

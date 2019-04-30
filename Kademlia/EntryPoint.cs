@@ -8,16 +8,28 @@ namespace Kademlia.Core
     {
         public static void Main(string[] args)
         {
+            if(args.Length != 3)
+            {
+                Console.WriteLine($"Required parameters: n m k");
+                return;
+            }
+
+            var n = int.Parse(args[0]);
+            var m = int.Parse(args[1]);
+            var k = int.Parse(args[2]);
+
+            // check if identifier space is good
+            if (Math.Pow(2, m) - 1 < n)
+                return;
+
             var coordinator = new Coordinator(
                 // n m k alpha
-                new Constants(10000, 160, 20, 3)
+                new Constants(n, m, k, 3)
             );
 
             coordinator
                 .BootstrapNetwork()
                 .GenerateGraph();
-
-            Console.ReadKey();
         }
     }
 }
