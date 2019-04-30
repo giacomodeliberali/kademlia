@@ -1,7 +1,7 @@
 .vs/
 bin/
 obj/
-stats/
+stats*/
 plots*/
-gephi/
+gephi*/
 test/
