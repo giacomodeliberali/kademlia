@@ -116,23 +116,6 @@ with open(stats_file, "r") as out_stats:
             if k == 20:
                 plt.savefig(plots_path, bbox_inches='tight')
                 plt.clf()
-
-        # degree dist
-        for k in [1,5,20]:
-            plots_path = os.path.join("plots", f"degree_dist_m{m_run}_k{k}.png")
-            h = sorted(plots[f"k{k}"]["degrees"])
-            fit = stats.norm.pdf(h, np.mean(h), np.std(h))
-            plt.plot(h,fit,'-o')
-            gr = plt.hist(h,density=True)
-            plt.xlabel('Degree')
-            # plt.ylabel('Frequency')
-            plt.title(f'm = {m_run}, k = {k}')
-            #maxfreq = gr[0].max()
-            #plt.ylim(top=np.ceil(maxfreq / 10) * 10 if maxfreq % 10 else maxfreq + 10)
-            #plt.gca().legend(['k=1','k=5','k=20'],loc='center right')
-            plt.savefig(plots_path, bbox_inches='tight')
-            plt.clf()
-
             
         plt.clf()
 
