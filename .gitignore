@@ -1,7 +1,6 @@
 .vs/
 bin/
 obj/
-stats*/
-plots*/
-gephi*/
-test/
+graph_*
+_graph_*
+plots/*.png
