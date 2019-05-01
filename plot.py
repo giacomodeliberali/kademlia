@@ -2,12 +2,10 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import statistics
 import os
-import numpy as np
-import scipy.stats as stats
-
 from operator import itemgetter as i
 from functools import cmp_to_key
 
+# START utility functions
 def cmp(a, b):
     return (a > b) - (a < b) 
 
@@ -23,32 +21,35 @@ def multikeysort(items, columns):
         )
         return next((result for result in comparer_iter if result), 0)
     return sorted(items, key=cmp_to_key(comparer))
+# END utility functions
 
+# input dir
 stats_dir = "./stats"
 
 stats_file = os.path.join(stats_dir, "stats.csv")
 with open(stats_file, "r") as out_stats:
     lines = out_stats.readlines()
-    skipped_first = False
+    skipped_first = False 
 
     graphs = []
 
     for line in lines:
 
-        if not skipped_first:
+        if not skipped_first: # skip first file
             skipped_first = True
             continue
 
+        # parse values
         content = line.split(";")
         n = int(content[0])
         m = int(content[1])
         k = int(content[2])            
-
         deg = float(content[3])
         avg_clustering = float(content[4])
         diameter = float(content[5])
         average_shortest_path_length = float(content[6])
 
+        # append as a dict
         graphs.append({
             'n': n,
             'm': m,
@@ -59,11 +60,13 @@ with open(stats_file, "r") as out_stats:
             'average_shortest_path_length': average_shortest_path_length
         })
 
+    # sort by k then n
     graphs = multikeysort(graphs, ['k','n']) 
 
-
+    # for each value of m
     for m_run in [9,10,64,160]:
 
+        # initialize a new plot data set
         plots = {
             'k1': {
                 'degrees': [],
@@ -88,6 +91,7 @@ with open(stats_file, "r") as out_stats:
             }
         }
 
+        # for each network
         for g in graphs:
 
             k = g['k']
@@ -98,6 +102,7 @@ with open(stats_file, "r") as out_stats:
             avg_clustering = g['avg_clustering']
             average_shortest_path_length = g['average_shortest_path_length']
 
+            # aggregate data with k and m as keys
             if m == m_run: 
                 plots[f'k{k}']["degrees"].append(deg)
                 plots[f'k{k}']["nodes"].append(n)
@@ -113,7 +118,7 @@ with open(stats_file, "r") as out_stats:
             plt.ylabel('Degree')
             plt.title(f'm = {m_run}')
             plt.gca().legend(['k=1','k=5','k=20'],loc='center right')
-            if k == 20:
+            if k == 20: # generate only the last image with the 3 results 
                 plt.savefig(plots_path, bbox_inches='tight')
                 plt.clf()
             
@@ -127,7 +132,9 @@ with open(stats_file, "r") as out_stats:
             plt.ylabel('Path length')
             plt.title(f'm = {m_run}')
             plt.gca().legend(['k=1','k=5','k=20'],loc="lower right")
-            plt.savefig(plots_path, bbox_inches='tight')
+            if k == 20: # generate only the last image with the 3 results
+                plt.savefig(plots_path, bbox_inches='tight')
+                plt.clf()
         
         plt.clf()
 
@@ -139,8 +146,7 @@ with open(stats_file, "r") as out_stats:
             plt.ylabel('Clustering coefficient')
             plt.title(f'm = {m_run}')
             plt.gca().legend([f'k=1','k=5','k=20'])
-            if k == 20:
+            if k == 20: # generate only the last image with the 3 results
                 plt.savefig(plots_path, bbox_inches='tight')
         plt.clf()
-
 
