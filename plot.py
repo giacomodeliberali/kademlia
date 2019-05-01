@@ -40,7 +40,7 @@ with open(stats_file, "r") as out_stats:
             continue
 
         # parse values
-        content = line.split(";")
+        content = line.split(",")
         n = int(content[0])
         m = int(content[1])
         k = int(content[2])            

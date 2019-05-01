@@ -15,7 +15,7 @@ files = os.listdir(stats_dir)
 # write stats.csv header
 out_stats_file = os.path.join(stats_dir, "stats.csv")
 with open(out_stats_file, "w+") as out_stats:
-    out_stats.write('n;m;k;degree;avg_clustering;diameter;average_path_length\n')
+    out_stats.write('n,m,k,degree,avg_clustering,diameter,average_path_length\n')
 
 # display current progress
 index = 1
@@ -84,4 +84,4 @@ for filename in files:
 out_stats_file = os.path.join(stats_dir, "stats.csv")
 with open(out_stats_file, "a") as out_stats:
     for key in stats:
-        out_stats.write(f'{stats[key]["n"]};{stats[key]["m"]};{stats[key]["k"]};{stats[key]["deg"]};{stats[key]["avg_clustering"]};{stats[key]["diameter"]};{stats[key]["average_shortest_path_length"]};\n')
+        out_stats.write(f'{stats[key]["n"]},{stats[key]["m"]},{stats[key]["k"]},{stats[key]["deg"]},{stats[key]["avg_clustering"]},{stats[key]["diameter"]},{stats[key]["average_shortest_path_length"]}\n')
