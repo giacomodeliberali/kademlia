@@ -78,7 +78,7 @@ namespace Kademlia.Core
                 });
             });
 
-            Console.WriteLine($"\rGenerated {edgesCount} edges (max is {Constants.N * Constants.M * Constants.K})");
+            Console.WriteLine($"\rGenerated {edgesCount} edges (upper bound: {Constants.N * Constants.M * Constants.K})");
 
             return this;
         }
@@ -89,7 +89,6 @@ namespace Kademlia.Core
         public void GenerateGraph()
         {
             var csv = new StringBuilder();
-            //csv.AppendLine($"Source;Target");
             nodes.ForEach(node =>
             {
                 node.RoutingTable.Buckets.ToList().ForEach(bucket =>
@@ -101,6 +100,7 @@ namespace Kademlia.Core
                 });
             });
 
+            // do not overwrite files, generate a new index
             String fileName;
             String path;
             int i = 1;
@@ -110,6 +110,7 @@ namespace Kademlia.Core
                 path = $"./stats/{fileName}";
             } while (File.Exists(path));
 
+            // write network content
             File.WriteAllText(path, csv.ToString());
         }
 
